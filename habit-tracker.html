@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Tracker</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f5f4f0;
+      --surface:   #ffffff;
+      --surface2:  #f0ede8;
+      --border:    rgba(0,0,0,0.10);
+      --border2:   rgba(0,0,0,0.18);
+      --text:      #1a1916;
+      --muted:     #7a7870;
+      --hint:      #b0ada6;
+      --green:     #1D9E75;
+      --green-lt:  #E1F5EE;
+      --green-mid: #9FE1CB;
+      --green-dk:  #085041;
+      --green-str: #0F6E56;
+      --red-lt:    #FCEBEB;
+      --red:       #A32D2D;
+      --radius:    12px;
+      --radius-sm: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:        #181714;
+        --surface:   #232220;
+        --surface2:  #2c2b28;
+        --border:    rgba(255,255,255,0.08);
+        --border2:   rgba(255,255,255,0.15);
+        --text:      #f0ede8;
+        --muted:     #a09d96;
+        --hint:      #605d58;
+        --green-lt:  #0d3d2d;
+        --green-mid: #1D9E75;
+        --green-dk:  #9FE1CB;
+        --red-lt:    #3d1010;
+        --red:       #f09595;
+      }
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    /* ── Layout ── */
+    #app {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* ── Header ── */
+    .header { margin-bottom: 2rem; }
+    .header h1 {
+      font-size: 28px;
+      font-weight: normal;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .header p {
+      font-size: 14px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ── Progress card ── */
+    .progress-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .progress-stats { display: flex; gap: 2rem; flex-shrink: 0; }
+    .stat { display: flex; flex-direction: column; }
+    .stat-num {
+      font-size: 28px;
+      font-weight: normal;
+      color: var(--text);
+      line-height: 1;
+      font-family: 'Georgia', serif;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-family: sans-serif; }
+    .progress-bar-wrap { flex: 1; }
+    .progress-bar-track {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--surface2);
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--green);
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+      width: 0%;
+    }
+    .progress-pct {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+      font-family: sans-serif;
+    }
+
+    /* ── Add row ── */
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .add-row input {
+      flex: 1;
+      height: 42px;
+      padding: 0 14px;
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: sans-serif;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .add-row input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(29,158,117,0.15);
+    }
+    .add-row input::placeholder { color: var(--hint); }
+    .btn-add {
+      height: 42px;
+      padding: 0 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: sans-serif;
+      font-weight: 500;
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { opacity: 0.88; }
+    .btn-add:active { transform: scale(0.97); }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 10px;
+      font-family: sans-serif;
+    }
+
+    /* ── Habit list ── */
+    .habit-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .habit-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      transition: border-color 0.25s, background 0.25s;
+      animation: slideIn 0.22s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .habit-item.done {
+      background: var(--green-lt);
+      border-color: var(--green-mid);
+    }
+
+    /* Check button */
+    .check-btn {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      font-size: 13px;
+      color: transparent;
+    }
+    .habit-item.done .check-btn {
+      background: var(--green);
+      border-color: var(--green-str);
+      color: #fff;
+      transform: scale(1.05);
+    }
+    .check-btn:hover:not(.done-btn) { border-color: var(--green); }
+
+    /* Habit name */
+    .habit-name {
+      flex: 1;
+      font-size: 15px;
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      transition: color 0.2s;
+    }
+    .habit-item.done .habit-name {
+      color: var(--green-dk);
+      text-decoration: line-through;
+      text-decoration-color: var(--green-mid);
+    }
+
+    /* Badge */
+    .habit-badge {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      font-family: sans-serif;
+    }
+    .habit-item.done .habit-badge {
+      background: var(--green-mid);
+      color: var(--green-dk);
+    }
+    .habit-item:not(.done) .habit-badge {
+      background: var(--surface2);
+      color: var(--muted);
+    }
+
+    /* Delete button */
+    .del-btn {
+      width: 24px; height: 24px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--hint);
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+      line-height: 1;
+    }
+    .del-btn:hover { color: var(--red); background: var(--red-lt); }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--hint);
+      font-size: 14px;
+      font-family: sans-serif;
+      font-style: italic;
+      border: 0.5px dashed var(--border2);
+      border-radius: var(--radius);
+    }
+
+    /* Confetti burst */
+    .confetti {
+      position: fixed;
+      pointer-events: none;
+      font-size: 16px;
+      animation: pop 0.7s ease forwards;
+    }
+    @keyframes pop {
+      0%   { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-70px) scale(0.4); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Habit tracker</h1>
+    <p>Build your daily routine, one check at a time.</p>
+  </div>
+
+  <!-- Progress summary -->
+  <div class="progress-card">
+    <div class="progress-stats">
+      <div class="stat">
+        <span class="stat-num" id="done-count">0</span>
+        <span class="stat-label">Completed</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="total-count">0</span>
+        <span class="stat-label">Total</span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="bar"></div>
+      </div>
+      <div class="progress-pct" id="pct">0% done today</div>
+    </div>
+  </div>
+
+  <!-- Add habit -->
+  <div class="add-row">
+    <input type="text" id="habit-input" placeholder="e.g. Drink 8 glasses of water" maxlength="80" />
+    <button class="btn-add" id="add-btn">+ Add habit</button>
+  </div>
+
+  <!-- Habit list -->
+  <div class="section-label" id="list-label" style="display:none">Today's habits</div>
+  <div class="habit-list" id="habit-list">
+    <div class="empty" id="empty-state">No habits yet — add one above to get started.</div>
+  </div>
+
+</div>
+
+<script>
+  /* ── Default starter habits ── */
+  const DEFAULTS = [
+    { id: 1, name: "Morning workout", done: false },
+    { id: 2, name: "Read for 20 minutes", done: false },
+    { id: 3, name: "Drink 8 glasses of water", done: false }
+  ];
+
+  /* ── State (sessionStorage so refresh preserves, close clears) ── */
+  let habits = JSON.parse(sessionStorage.getItem('ht-habits') || 'null') || DEFAULTS;
+  let nextId = Math.max(...habits.map(h => h.id), 0) + 1;
+
+  function save() {
+    sessionStorage.setItem('ht-habits', JSON.stringify(habits));
+  }
+
+  /* ── Render ── */
+  function render() {
+    const list      = document.getElementById('habit-list');
+    const empty     = document.getElementById('empty-state');
+    const label     = document.getElementById('list-label');
+    const doneCount = habits.filter(h => h.done).length;
+    const total     = habits.length;
+    const pct       = total ? Math.round((doneCount / total) * 100) : 0;
+
+    /* Update progress */
+    document.getElementById('done-count').textContent = doneCount;
+    document.getElementById('total-count').textContent = total;
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('pct').textContent = pct + '% done today';
+
+    /* Show/hide section label */
+    label.style.display = total ? 'block' : 'none';
+
+    /* Remove existing habit rows (keep empty state node) */
+    [...list.querySelectorAll('.habit-item')].forEach(el => el.remove());
+
+    if (total === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      habits.forEach(h => {
+        const item = document.createElement('div');
+        item.className = 'habit-item' + (h.done ? ' done' : '');
+        item.dataset.id = h.id;
+
+        item.innerHTML = `
+          <button class="check-btn" title="${h.done ? 'Mark incomplete' : 'Mark complete'}">&#10003;</button>
+          <span class="habit-name">${escHtml(h.name)}</span>
+          <span class="habit-badge">${h.done ? 'Done' : 'Pending'}</span>
+          <button class="del-btn" title="Remove habit">&#215;</button>
+        `;
+
+        item.querySelector('.check-btn').addEventListener('click', () => toggle(h.id, item.querySelector('.check-btn')));
+        item.querySelector('.del-btn').addEventListener('click', () => remove(h.id));
+        list.appendChild(item);
+      });
+    }
+
+    save();
+  }
+
+  /* ── Toggle complete ── */
+  function toggle(id, btn) {
+    const h = habits.find(x => x.id === id);
+    if (!h) return;
+    h.done = !h.done;
+    if (h.done) burst(btn);
+    render();
+  }
+
+  /* ── Remove habit ── */
+  function remove(id) {
+    habits = habits.filter(x => x.id !== id);
+    render();
+  }
+
+  /* ── Add new habit ── */
+  function addHabit() {
+    const inp = document.getElementById('habit-input');
+    const name = inp.value.trim();
+    if (!name) { inp.focus(); return; }
+    habits.push({ id: nextId++, name, done: false });
+    inp.value = '';
+    inp.focus();
+    render();
+  }
+
+  /* ── Confetti burst on completion ── */
+  function burst(target) {
+    const sparks = ['✦', '✦', '·', '✦', '·'];
+    const rect = target.getBoundingClientRect();
+    sparks.forEach((s, i) => {
+      const el = document.createElement('span');
+      el.className = 'confetti';
+      el.textContent = s;
+      el.style.cssText = `left:${rect.left + 12 + (i - 2) * 16}px; top:${rect.top + window.scrollY}px; color:#1D9E75;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 750);
+    });
+  }
+
+  /* ── Escape HTML to prevent injection ── */
+  function escHtml(s) {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* ── Event listeners ── */
+  document.getElementById('add-btn').addEventListener('click', addHabit);
+  document.getElementById('habit-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addHabit();
+  });
+
+  /* ── Initial render ── */
+  render();
+</script>
+
+</body>
+</html>
