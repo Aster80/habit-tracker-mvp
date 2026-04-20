@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Habit Tracker MVP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            margin-top: 50px;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            width: 350px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; }
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 8px;
+        }
+        button {
+            padding: 8px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+        }
+        ul { list-style: none; padding: 0; }
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+        .progress {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Habit Tracker</h1>
+
+    <div class="input-section">
+        <input type="text" id="habitInput" placeholder="Enter a habit">
+        <button onclick="addHabit()">Add</button>
+    </div>
+
+    <ul id="habitList"></ul>
+
+    <div class="progress" id="progress">0 / 0 completed</div>
+</div>
+
+<script>
+    const habitInput = document.getElementById("habitInput");
+    const habitList = document.getElementById("habitList");
+    const progress = document.getElementById("progress");
+
+    let habits = [];
+
+    function addHabit() {
+        const habitText = habitInput.value.trim();
+        if (habitText === "") return;
+
+        habits.push({ text: habitText, completed: false });
+        habitInput.value = "";
+        renderHabits();
+    }
+
+    function toggleComplete(index) {
+        habits[index].completed = !habits[index].completed;
+        renderHabits();
+    }
+
+    function renderHabits() {
+        habitList.innerHTML = "";
+        habits.forEach((habit, index) => {
+            const li = document.createElement("li");
+
+            const span = document.createElement("span");
+            span.textContent = habit.text;
+            if (habit.completed) span.classList.add("completed");
+
+            const btn = document.createElement("button");
+            btn.textContent = "Complete";
+            btn.onclick = () => toggleComplete(index);
+
+            li.appendChild(span);
+            li.appendChild(btn);
+            habitList.appendChild(li);
+        });
+
+        updateProgress();
+    }
+
+    function updateProgress() {
+        const completed = habits.filter(h => h.completed).length;
+        progress.textContent = `${completed} / ${habits.length} completed`;
+    }
+</script>
+
+</body>
+</html>
